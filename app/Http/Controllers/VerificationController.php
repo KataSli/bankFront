@@ -30,8 +30,10 @@ class VerificationController extends Controller
         }
     }
 
-    public function manualVerification(Bigint $id, boolean $ver) {
-        $transfer = Transfer::where('id','=',$id);
+    public function manualVerification(Request $request) {
+        $id = $request->get('id');
+        $ver = $request->get('ver');
+        $transfer = Transfer::where('id','=',$id)->get();
         if($ver) {
             $transfer->status = 4;
             app('App\Http\Controllers\AccountController')->changeInternalBillingAccountBalance($transfer->kwota*(-1));

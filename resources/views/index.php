@@ -19,7 +19,7 @@
         <div class="row">
 
         <div class="col-lg-3"></div>
-        <div class="col-lg-6" style="height: 110%; margin-top: 3%; border: solid black 1px; padding: 10px; background-color: white; text-align: center;">
+        <div class="col-lg-6" style="height: 110%; margin-top: 4%; border: solid black 1px; padding: 10px; background-color: white; text-align: center;">
 
             <div class="row" style="margin:auto; width:90%; text-align: center;">
 
@@ -64,6 +64,7 @@
 
     <script type="text/javascript" src="js/jquery.min.js"></script> <!-- jquery -->
 
+    <!-- sprawdzanie poprawnosci loginu i hasla i przekazanie wartosci id zalogowanej osoby -->
     <script>
     $("#wyslij").click(function(){
         var login = $("#login").val();
@@ -72,59 +73,21 @@
             var obj = JSON.parse(result);
 
             if(obj.ID == -1){
+
                 $("#logError").html('<br/><h5>Błąd logowania, sprawdź poprawność loginu lub hasła.</h5>');
+
             }else if(obj.jestPracownikiem == 0){
 
                 $(location).attr('href','strona_glowna.php?kod='+obj.ID);
 
             }else{
+
                 $("#kod").val(obj.ID);
                 $(location).attr('href','pracownik.php?kod='+obj.ID);
 
             }
         });
     });
-    </script>
-
-    <!-- walidacja -->
-    <script>
-
-            const form = document.getElementById("form");
-            const login = document.getElementById("login");
-            const formMessage = document.getElementById("form-message1");
-            const submit = document.getElementById("wyslij");
-
-            form.addEventListener("submit", e => {
-                        e.preventDefault();
-                        let formErrors = [];
-
-                        if (login.value.length < 6) {
-                            formErrors.push("Login nie może być krótszy niż 6 cyfr.");
-                        }
-
-                        const regx1 = /[$\;\!\@\#\%\^\&\*\(\)\>\<\:\?-_/]/;
-                        if(regx1.test(login.value)){
-                            formErrors.push("Login nie może zawierać znaków specjalnych.");
-                        }
-
-                        const regx2 = /[a-zA-Z/]/;
-                        if(regx2.test(login.value)){
-                            formErrors.push("Login nie może zawierać liter.");
-                        }
-
-                        if (!formErrors.length) {
-                        e.target.submit();
-                        }
-
-                        else {
-                        formMessage.innerHTML = `
-                            <ul class="form-error-list">
-                                ${formErrors.map(el => `<p>${el}</p>`).join("")}
-                            </ul>
-                        `;
-                    }
-            });
-
     </script>
 
     <script type="text/javascript" src="js/popper.min.js"></script> <!-- popper -->

@@ -25,24 +25,16 @@
 
             <div class="col-lg-1"> </div>
 
-            <div class="col-lg-10" style="height: 110%; margin-top: 2%; border: solid black 1px; padding: 4px; background-color: white; text-align: center;">
+            <div class="col-lg-10" style="height: 110%; margin-top: 2%; border: solid black 1px; padding: 15px; background-color: white; text-align: center;">
 
                 <div class="row" style="margin:auto;text-align: center;">
 
                     <h1 style ="font-size: 40; display: inline-block; font-weight: 150;">Historia</h1>
 
-                    <div class="form-group col-lg-6 needs-validation"> <!-- od kiedy -->
-                        <label for="date-picker1" style = "font-size:17px;">Od</label>
+                    <div class="form-group col-lg-6 needs-validation" style="margin-bottom:3%; margin:auto;text-align: center;" > <!-- od kiedy -->
+                        <label for="date-picker1" style = "font-size:17px;">Data początkowa</label>
 
                         <input placeholder="Wybierz datę" type="text" id="date-picker1" class="form-control datepicker" data-value="2021/01/14" required>
-                    </div>
-
-                    <div class="form-group col-lg-6 needs-validation"> <!-- do kiedy -->
-
-                        <label for="date-picker2" style = "font-size:17px;">Do</label>
-
-                        <input placeholder="Wybierz datę" type="text" id="date-picker2" class="form-control datepicker" data-value="2021/01/14" required>
-
                     </div>
 
                 </div>
@@ -89,30 +81,38 @@
     <script>
         var client = null;
         var aktualneKonto = 0;
+        var currNrKonta;
 
         function swapIndex(iteracja){
             aktualneKonto = iteracja;
             fillActHistory();
         }
 
-        function fillActHistory(){
-            $.post("api/diamond/transferHistory", "account_number="+client.accounts[aktualneKonto].numer.numer, function(result) {
-                var items = [];
-                var lp = 1;
-                $.each(result, function(i,item){
-                    var tr = '<tr>\n' +
-                        '                            <th scope="row">'+ lp++ +'</th>\n' +
-                        '                            <td>'+ item.nadawca+'</td>\n' +
-                        '                            <td>'+ item.odbiorca+'</td>\n' +
-                        '                            <td>'+ item.tytul +'</td>\n' +
-                        '                            <td>'+ item.created_at +'</td>\n' +
-                        '                            <td>'+ item.kwota +'zł </td>\n' +
-                        '                            </tr>';
-                    items.push(tr);
-                })
-                $("#historia").html(items.join(''));
-
+        function fillHistDate(result){
+            var items = [];
+            var lp = 1;
+            $.each(result, function(i,item){
+                var tr = '<tr '+ ((item.nadawca == currNrKonta) ? 'class="table-active"' : 'class="table-success"') +'>\n' +
+                    '                            <th scope="row">'+ lp++ +'</th>\n' +
+                    '                            <td>'+ item.nadawca+'</td>\n' +
+                    '                            <td>'+ item.odbiorca+'</td>\n' +
+                    '                            <td>'+ item.tytul +'</td>\n' +
+                    '                            <td>'+ item.created_at +'</td>\n' +
+                    '                            <td>'+ ((item.nadawca == currNrKonta) ? '-' : '+')+ item.kwota +'zł </td>\n' +
+                    '                            </tr>';
+                items.push(tr);
             })
+            $("#historia").html(items.join(''));
+        }
+
+        function fillActHistory(){
+            currNrKonta = client.accounts[aktualneKonto].numer.numer;
+
+            $.post("api/diamond/transferHistory", "account_number="+client.accounts[aktualneKonto].numer.numer, function(result) {
+
+                fillHistDate(result);
+
+        })
 
 
         }
@@ -150,14 +150,20 @@
         </script>
 
 
-
-
-
-    <!-- datapicker -->
+    <!-- datepicker -->
     <script>
         new WOW().init();
 
-        $('.datepicker').pickadate();
+        $('#date-picker1').pickadate({
+            onSet:function(kontekst){
+                var data = new Date(kontekst.select);
+                $.post("api/diamond/transferHistoryDates", "account_number=" +currNrKonta+ "&from_date="+ data.toJSON() +"", function (result) {
+
+                    fillHistDate(result);
+                });
+            }
+        });
+
         $(document).ready(function () {
             $('.mdb-select').materialSelect();
         });

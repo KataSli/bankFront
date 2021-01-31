@@ -36,11 +36,14 @@ Route::get('/przelew.php', function() {
 Route::get('/historia.php', function() {
     return view('historia');
 });
-Route::get('/po_przelewie.php', function() {
-    return view('po_przelewie');
+Route::get('/po_przelewie_sukces.php', function() {
+    return view('po_przelewie_sukces');
 });
 Route::get('/pracownik.php', function() {
     return view('pracownik');
+});
+Route::get('/po_przelewie_blad.php', function() {
+    return view('po_przelewie_blad');
 });
 
 

@@ -1,4 +1,6 @@
 <html>
+
+<!-- uzyskanie id osoby zalogowanej -->
 <?php session_start();
 if(isset($_REQUEST["kod"])){
     $kd = $_REQUEST["kod"];
@@ -39,7 +41,7 @@ if(isset($_REQUEST["kod"])){
                                 </h4>
                                 <br/>
                                 <h5 class="card-title">Konto bieżące</h5>
-                                <p class="card-text" id="kontoGlowne"></p>
+                                <p style="font-size: 16px;" class="card-text" id="kontoGlowne"></p>
                         </div>
                         <div class= "col-lg-2"></div>
                         <div class= "col-lg-5 col-md-6 col-sm-5 col-5">
@@ -96,6 +98,8 @@ if(isset($_REQUEST["kod"])){
     <script>
         var client = null;
         var aktualneKonto = 0;
+
+        //funkcja do uzupelniania podstawowych informacji o kliencie
         function fillAccount(){
             var numerSpacje = client.accounts[aktualneKonto].numer.numer.match(/[A-Z]{2}|(?:(?:\d{2}|\d{4})(?=(\d{4})*$))/g).join(" ");
 
@@ -112,57 +116,64 @@ if(isset($_REQUEST["kod"])){
             fillAccount();
         }
 
+        //funkcja do uzupelniania skroconej wersji historii
         function fillActHistory(){
+            currNrKonta = client.accounts[aktualneKonto].numer.numer;
             $.post("api/diamond/newestTransfers", "account_number="+client.accounts[aktualneKonto].numer.numer, function(result) {
                 var items = [];
                 var lp = 1;
                 $("#najnowszePrzelewy").html('');
                 $.each(result, function(i,item){
-                    var tr = '<tr>\n' +
+                    var tr = '<tr '+ ((item.nadawca == currNrKonta) ? 'class="table-active"' : 'class="table-success"') +'>\n' +
                         '                            <th scope="row">'+ lp++ +'</th>\n' +
                         '                            <td>'+ item.nadawca+'</td>\n' +
                         '                            <td>'+ item.odbiorca+'</td>\n' +
                         '                            <td>'+ item.tytul +'</td>\n' +
                         '                            <td>'+ item.created_at+'</td>\n' +
-                        '                            <td>'+ item.kwota +'zł </td>\n' +
+                        '                            <td>'+ ((item.nadawca == currNrKonta) ? '-' : '+')+ item.kwota +'zł </td>\n' +
                         '                            </tr>';
                     items.push(tr);
                 })
                 $("#najnowszePrzelewy").html(items.join(''));
             })
 
-
         }
 
+        //funkcja do uzupelniania dropsdownu z numerami kont klienta
+        function dropdownAccounts(){
+            var items = [];
+            var iteracja = 1;
+            $.each(client.accounts, function(i,item){
+
+                var numerSpacje2 = item.numer.numer.match(/[A-Z]{2}|(?:(?:\d{2}|\d{4})(?=(\d{4})*$))/g).join(" ");
+                var li;
+
+                if(iteracja == 1){
+                    li = '<li><a class="dropdown-item" onclick="swapIndex('+ (iteracja-1) +')" style="font-size:15px;">'+ iteracja++ +'. Saldo: '+item.saldo.saldo+' zł <br/>\n' +
+                        '            '+ numerSpacje2 +'\n' +
+                        '            </a></li>';
+                }else {
+                    li = '<li><a class="dropdown-item" onclick="swapIndex('+ (iteracja-1) +')" style="font-size:15px;border-top:1px solid black;">'+ iteracja++ +'. Saldo: '+item.saldo.saldo+' zł <br/>\n' +
+                        '            '+ numerSpacje2 +'\n' +
+                        '            </a></li>';
+                }
+                items.push(li);
+            })
+            $("#wszystkieKonta").append(items.join(''));
+        }
+
+        //pozyskanie id klienta i wywolanie poszczegolnych funkcji
         $(document).ready(function(){
             <?php $kd = $_SESSION['kodKlienta'] ?>
             $.post("api/diamond/getAccounts", "id="+<?php echo($kd); ?> , function(result){
                 client = JSON.parse(result);
+
                 //imie i nazwisko
                 $("#imie").html("Witaj "+client.nazwisko);
 
                 fillAccount();
 
-                var items = [];
-                var iteracja = 1;
-                $.each(client.accounts, function(i,item){
-
-                    var numerSpacje2 = item.numer.numer.match(/[A-Z]{2}|(?:(?:\d{2}|\d{4})(?=(\d{4})*$))/g).join(" ");
-                    var li;
-
-                    if(iteracja == 1){
-                        li = '<li><a class="dropdown-item" onclick="swapIndex('+ (iteracja-1) +')" style="font-size:15px;">'+ iteracja++ +'. Saldo: '+item.saldo.saldo+' zł <br/>\n' +
-                        '            '+ numerSpacje2 +'\n' +
-                        '            </a></li>';
-                    }else {
-                        li = '<li><a class="dropdown-item" onclick="swapIndex('+ (iteracja-1) +')" style="font-size:15px;border-top:1px solid black;">'+ iteracja++ +'. Saldo: '+item.saldo.saldo+' zł <br/>\n' +
-                            '            '+ numerSpacje2 +'\n' +
-                            '            </a></li>';
-                    }
-                    items.push(li);
-                })
-                $("#wszystkieKonta").append(items.join(''));
-
+                dropdownAccounts();
             });
         });
     </script>

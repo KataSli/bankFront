@@ -1,4 +1,5 @@
 <html>
+
 <?php session_start();
 ?>
 
@@ -17,7 +18,7 @@
     </head>
     <body>
 
-    <?php @include('komponenty/navbar.php');?>
+    <?php @include('komponenty/navbar_przelew.php');?>
 
     <div class="container">
         <div class="row">
@@ -33,18 +34,19 @@
 
                     <form id="form" action="po_przelewie.php" method="POST">
 
-                        <div class="form-group row needs-validation"> <!-- wybor konta -->
+                        <div class="form-group row needs-validation" style="margin-bottom:1px;"> <!-- wybor konta -->
 
                             <label style = "font-size:18px;">Z konta</label>
-                            <select class="form-select" aria-label="Default select example" id="wyborKonta" required>
+                            <select class="form-select" aria-label="Default select example" id="wyborKonta" required onchange="fillSaldo()">
                             </select>
+                            <p id="saldoK" style="text-align: left;"></p>
 
                         </div>
 
                         <div class="form-group row needs-validation">  <!-- odbiorca-->
 
                                 <label for="odbiorca" style = "font-size:18px;">Odbiorca</label>
-                                <input type="text" class="form-control" id="odbiorca"  placeholder="Imię nazwisko" value="Piotr Okulski" required>
+                                <input type="text" class="form-control" id="odbiorca"  placeholder="Imię nazwisko" value="Bartlomiej Babacki" required>
 
                                 <div id="form-messagee"></div>
 
@@ -76,7 +78,7 @@
                         <div class="form-group row needs-validation"> <!-- konto -->
 
                                 <label for="nrkonta" style = "font-size:18px;" >Numer konta odbiorcy</label>
-                                <input type="text" class="form-control" id="nrkonta" placeholder="00 0000 0000 0000 0000 0000 0000" value="391324211691803313179163" required>
+                                <input type="text" class="form-control" id="nrkonta" placeholder="00 0000 0000 0000 0000 0000 0000" value="35391324210000000000000002" required>
 
                                 <div id="form-message1"></div>
 
@@ -92,29 +94,29 @@
                         <div class="form-group row needs-validation">  <!-- kwota-->
 
                                 <label for="kwota" style = "font-size:18px;">Kwota</label>
-                                <input type="text" class="form-control" id="kwota"  placeholder="0,00" value="11.00" required>
+                                <input type="text" class="form-control" id="kwota"  placeholder="0,00" value="9.00" required>
 
                                 <div id="form-message2"></div>
 
                         </div>
 
                         <div class="form-check"> <!-- przelew ekspresowy lub zwykly -->
-                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="standard" checked>
-                        <label class="form-check-label" for="flexRadioDefault1" style = "font-size:18px;">
-                            Standardowy
-                        </label>
+                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="standard" checked>
+                            <label class="form-check-label" for="standard" style = "font-size:18px;">
+                                Standardowy
+                            </label>
 
                         <br/>
 
-                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="ekspres">
-                        <label class="form-check-label" for="flexRadioDefault2" style = "font-size:18px;">
-                            Ekspresowy
-                        </label>
+                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="ekspres">
+                            <label class="form-check-label" for="ekspres" style = "font-size:18px;">
+                                Ekspresowy
+                            </label>
                         </div>
 
                         <br/>
 
-                        <button id="przelew" type="button" onclick="sendTransfer()" class="btn btn-default btn-dark" style="width:50%;">Przelej</button> <!-- button przelewu -->
+                        <button id="przelew" type="submit" class="btn btn-default btn-dark" style="width:50%;">Przelej</button> <!-- button przelewu -->
 
                     </form>
 
@@ -141,6 +143,7 @@
         var client = null;
         var aktualneKonto = 0;
 
+        //funkcja przesylajaca dane do przelewu - wykonujaca przelew
         function sendTransfer(){
 
             var nadawcaKonto = $("#wyborKonta").val();
@@ -157,33 +160,36 @@
             var kwota = $("#kwota").val();
             var isStandard = $("#standard").is(':checked');
 
-            var params = "nadawca="+nadawcaKonto+"&imie_nazwisko="+imie_nazwisko+"&adres="+adres+"&miejscowosc="+miejscowosc+"&kod="+kod+"&odbiorca="+odbiorca+"&tytul="+tytul+"&kwota="+kwota;
+            var params = "nadawca="+nadawcaKonto+"&imie_nazwisko="+imie_nazwisko+"&adres="+adres+"&miejscowosc="+miejscowosc+"&kod="+kod+"&odbiorca="+odbiorca+"&tytul="+tytul+"&kwota="+kwota+"&standard="+isStandard;
 
-            var typTransferu = "api/diamond/internalTransfer"; //przelew wewnętrzny
-            if(!isStandard){
-                typTransferu = "api/diamond/expressTransfer"; //przelew ekspresowy
-            }
+            $.post("api/diamond/transfer", params, function (result) {
 
-            $.post(typTransferu, params , function (result) {
-                alert(result);
+                if(result == 0){
+                    $(location).attr('href', 'po_przelewie_blad.php');
+                }else{
+                    $(location).attr('href', 'po_przelewie_sukces.php');
+                }
+
             });
-            
+
         }
 
-        function swapIndex(iteracja){
-            aktualneKonto = iteracja;
-            fillActHistory();
+        function fillSaldo(){
+            var selektor = document.getElementById("wyborKonta");
+            var konto = client.accounts[selektor.selectedIndex];
+            $("#saldoK").text("Saldo: " + konto.saldo.saldo);
         }
 
+        //funckcja uzupelniajaca selektor znajdujacy sie w polu przelewu o dostepne konta klienta
         function fillSelectorAccounts(){
             var items = [];
-            var iteracja = 1;
+            var iteracja = 0;
             $.each(client.accounts, function(i,item){
 
                 var numerSpacje2 = item.numer.numer.match(/[A-Z]{2}|(?:(?:\d{2}|\d{4})(?=(\d{4})*$))/g).join(" ");
                 var li;
 
-                if(iteracja == 1){
+                if(iteracja++ == 0){
                     li = '<option selected>'+numerSpacje2+'</option>';
                 }else {
                     li = '<option>'+numerSpacje2+'</option>';
@@ -193,31 +199,15 @@
             $("#wyborKonta").html(items.join(''));
         }
 
+        //pozyskanie id klienta i wywolanie poszczegolnych funkcji
         $(document).ready(function() {
             <?php $kd = $_SESSION['kodKlienta'] ?>
             $.post("api/diamond/getAccounts", "id=" +<?php echo($kd); ?> , function (result) {
                 client = JSON.parse(result);
 
-                var items = [];
-                var iteracja = 1;
-                $.each(client.accounts, function(i,item){
-
-                    var numerSpacje2 = item.numer.numer.match(/[A-Z]{2}|(?:(?:\d{2}|\d{4})(?=(\d{4})*$))/g).join(" ");
-                    var li;
-
-                    if(iteracja == 1){
-                        li = '<li><a class="dropdown-item" onclick="swapIndex('+ (iteracja-1) +')" style="font-size:15px;">'+ iteracja++ +'. Saldo: '+item.saldo.saldo+' zł <br/>\n' +
-                            '            '+ numerSpacje2 +'\n' +
-                            '            </a></li>';
-                    }else {
-                        li = '<li><a class="dropdown-item" onclick="swapIndex('+ (iteracja-1) +')" style="font-size:15px;border-top:1px solid black;">'+ iteracja++ +'. Saldo: '+item.saldo.saldo+' zł <br/>\n' +
-                            '            '+ numerSpacje2 +'\n' +
-                            '            </a></li>';
-                    }
-                    items.push(li);
-                })
-                $("#wszystkieKonta").html(items.join(''));
                 fillSelectorAccounts();
+
+                fillSaldo();
 
             });
 
@@ -254,12 +244,12 @@
                         }
 
 
-                        const regx1 = /\d{2}[ ]\d{4}[ ]\d{4}[ ]\d{4}[ ]\d{4}[ ]\d{4}[ ]\d{4}/;
+                        const regx1 = /(\d{2}[ ]\d{4}[ ]\d{4}[ ]\d{4}[ ]\d{4}[ ]\d{4}[ ]\d{4})|(\d{26})/;
                         if(!regx1.test(nrkonta.value)){
                             formErrors1.push("Niepoprawny format numeru konta.");
                         }
 
-                        const regx2 = /^[0-9]*$/;
+                        const regx2 = /\d+[\,\.]{0,1}\d+/;
                         if(!regx2.test(kwota.value)){
                             formErrors2.push("Niepoprawny format kwoty.");
                         }
@@ -273,7 +263,7 @@
 
                         if (!formErrors.length && !formErrors1.length && !formErrors2.length && !formErrors3.length) {
 
-                        e.target.submit();
+                            sendTransfer();
 
                         }
 
@@ -298,7 +288,10 @@
                                 ${formErrors3.map(el => `<p>${el}</p>`).join("")}
                             </ul>
                         `;
+
+                        return false;
                     }
+
             });
 
     </script>

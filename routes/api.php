@@ -30,6 +30,17 @@ Route::post('/diamond/calculateAccountNumber','AccountController@calculateAccoun
 
 Route::post('/diamond/newestTransfers','TransferController@getNewestTransfers');
 Route::post('/diamond/transferHistory','TransferController@getTransfers');
+Route::post('/diamond/transferHistoryDates','TransferController@getTransfersDatetoDate');
 Route::get('/diamond/internalTransfer','TransferController@internalTransfer');
 Route::post('/diamond/internalTransfer','TransferController@internalTransfer');
+
+Route::get('/diamond/transfer','TransferController@transfer');
+Route::post('/diamond/transfer','TransferController@transfer');
+
+Route::get('/diamond/getTransferToVerification','TransferController@getAllManualVerifications');
+Route::post('/diamond/getTransferToVerification','TransferController@getAllManualVerifications');
+
+Route::get('/diamond/verifyTransfer','VerificationController@manualVerification');
+Route::post('/diamond/verifyTransfer','VerificationController@manualVerification');
+
 Route::post('/diamond/sendXML','TransferController@sendFiles');
